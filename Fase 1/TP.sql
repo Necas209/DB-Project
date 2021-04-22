@@ -1,11 +1,11 @@
-use master;
-
+-- Criação da base de dados
+USE master;
 CREATE DATABASE Hospital;
 USE Hospital;
-
---USE master;
---DROP DATABASE Hospital;
-
+-- Eliminação da base de dados
+USE master;
+DROP DATABASE Hospital;
+-- Criação das tabelas da BD Hospital
 CREATE TABLE CPs(
 	CP		   CHAR(8),
 	Localidade VARCHAR(50) NOT NULL,
@@ -18,7 +18,8 @@ CREATE TABLE NIFs(
 	Nome	 VARCHAR(50) NOT NULL,
 	Telefone INTEGER	 NOT NULL,
 	PRIMARY KEY (NIF),
-	CHECK (NIF >= 100000000 AND NIF <= 999999999)
+	CHECK (NIF >= 100000000 AND NIF <= 999999999),
+	CHECK ((Telefone >= 210000000 AND Telefone < 297000000) OR (Telefone >= 910000000 AND Telefone < 970000000))
 	-- NIF composto por 9 dígitos
 );
 
