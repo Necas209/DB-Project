@@ -3,7 +3,7 @@ use master;
 CREATE DATABASE Hospital;
 USE Hospital;
 
---USE Biblioteca;
+--USE master;
 --DROP DATABASE Hospital;
 
 CREATE TABLE CPs(
@@ -18,8 +18,8 @@ CREATE TABLE NIFs(
 	Nome	 VARCHAR(50) NOT NULL,
 	Telefone INTEGER	 NOT NULL,
 	PRIMARY KEY (NIF),
-	CHECK ((NIF >= 100000000 AND NIF <= 399999999) OR (NIF >= 450000000 AND NIF <= 4599999990))
-	-- NIFs começados por 1/2/3 para pessoas individuais, e começados por 45 para pessoas não-residentes
+	CHECK (NIF >= 100000000 AND NIF <= 999999999)
+	-- NIF composto por 9 dígitos
 );
 
 CREATE TABLE Pessoas(
