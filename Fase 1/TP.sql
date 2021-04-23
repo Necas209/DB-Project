@@ -19,8 +19,8 @@ CREATE TABLE NIFs(
 	Telefone INTEGER	 NOT NULL,
 	PRIMARY KEY (NIF),
 	CHECK (NIF >= 100000000 AND NIF <= 999999999),
-	CHECK ((Telefone >= 210000000 AND Telefone < 297000000) OR (Telefone >= 910000000 AND Telefone < 970000000))
-	-- NIF composto por 9 dígitos
+	CHECK ((Telefone >= 200000000 AND Telefone < 300000000) OR (Telefone >= 900000000 AND Telefone <= 999999999))
+	-- NIF e Telfone compostos por 9 dígitos, Telefone fixo começa por 2 e móvel por 9
 );
 
 CREATE TABLE Pessoas(
@@ -77,8 +77,9 @@ CREATE TABLE Enfermeiros(
 
 CREATE TABLE Auxiliares(
 	ID_Aux		INTEGER,
-	Antiguidade INTEGER		NOT NULL CHECK (Antiguidade >= 0),
+	Antiguidade INTEGER		NOT NULL DEFAULT 0,
 	Servico		VARCHAR(50) NOT NULL,
+	CHECK (Antiguidade >= 0),
 	PRIMARY KEY (ID_Aux),
 	FOREIGN KEY (ID_Aux) REFERENCES Funcionarios(ID_Func)
 );
@@ -94,12 +95,14 @@ CREATE TABLE Descricoes(
 CREATE TABLE Inquerito(
 	ID_Pac   INTEGER,
 	Data_Inq DATETIME,
-	PRIMARY KEY (ID_Pac, Data_Inq),
-	FOREIGN KEY (ID_Pac, Data_Inq) REFERENCES Descricoes,
+	ID_Func	 INTEGER,
+	PRIMARY KEY (ID_Pac, Data_Inq, ID_Func),
+	FOREIGN KEY (ID_Func) REFERENCES Funcionarios(ID_Func),
+	FOREIGN KEY (ID_Pac, Data_Inq) REFERENCES Descricoes(ID_Pac, Data_Inq),
 );	
 
 CREATE TABLE Info_Op(
-	ID_Op   INTEGER,
+	ID_Op   INTEGER	 IDENTITY(1,1),
 	Data_Op DATETIME NOT NULL,
 	Duracao INTEGER  DEFAULT NULL, -- Duracao opcional
 	PRIMARY KEY (ID_Op)
@@ -123,7 +126,7 @@ CREATE TABLE Local_Op(
 	ID_Enf	 INTEGER,
 	ID_Pac	 INTEGER,
 	Data_Op  DATETIME,
-	Local_Op VARCHAR(20) NOT NULL,
+	Local_Op VARCHAR(50) NOT NULL,
 	PRIMARY KEY (ID_Op, ID_Med, ID_Enf, ID_Pac, Data_Op),
 	FOREIGN KEY (ID_Op, ID_Med, ID_Enf, ID_Pac) REFERENCES Operar(ID_Op, ID_Med, ID_Enf, ID_Pac)
 );
