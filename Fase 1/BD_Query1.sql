@@ -10,7 +10,7 @@ CREATE TABLE CPs(
 	CP		   CHAR(8),
 	Localidade VARCHAR(50) NOT NULL,
 	PRIMARY KEY (CP),
-	CHECK (CP LIKE '[0-9][0-9][[0-9][0-9]-[0-9][0-9][0-9]')
+	CHECK (CP LIKE '[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9]')
 );
 
 CREATE TABLE NIFs(
