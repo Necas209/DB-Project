@@ -1,5 +1,18 @@
-use Hospital;
+USE Hospital;
  
+ -- 2.1
+ SELECT N1.Nome as Paciente, Data_Inq, N2.Nome as Funcionario
+ FROM NIFs as N1, NIFs as N2, Pessoas as P1, Pessoas as P2, Pacientes, Funcionarios, Inquerito
+ WHERE Data_Inq = (SELECT MAX(Data_Inq) FROM Inquerito)
+ AND Inquerito.ID_Pac = Pacientes.ID_Pac
+ AND Pacientes.ID_Pac = P1.ID
+ AND P1.NIF = N1.NIF
+ AND Inquerito.ID_Func = Funcionarios.ID_Func
+ AND Funcionarios.ID_Func = P2.ID
+ AND P2.NIF = N2.NIF;
+
+ -- 1.
+
  INSERT INTO NIFs(NIF, Nome, Apelido, Telefone)	
  VALUES
  (100000001, 'Joaquim', 'Macedo', 937466897),
