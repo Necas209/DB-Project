@@ -21,7 +21,7 @@ CREATE TABLE NIFs(
 	PRIMARY KEY (NIF),
 	CHECK (NIF >= 100000000 AND NIF <= 999999999),
 	CHECK ((Telefone >= 200000000 AND Telefone < 300000000) OR (Telefone >= 900000000 AND Telefone <= 999999999))
-	-- NIF e Telfone compostos por 9 dígitos, Telefone fixo começa por 2 e móvel por 9
+	-- NIF e Telefone compostos por 9 dígitos, Telefone fixo começa por 2 e móvel por 9
 );
 
 CREATE TABLE Pessoas(
