@@ -3,7 +3,7 @@ USE Hospital;
  -- 2.1
 
  SELECT N1.Nome as Paciente, Data_Inq, N2.Nome as Funcionario
- FROM NIFs as N1, NIFs as N2, Pessoas as P1, Pessoas as P2, Pacientes, Funcionarios, Inquerito
+ FROM NIFs N1, NIFs N2, Pessoas P1, Pessoas P2, Pacientes, Funcionarios, Inquerito
  WHERE Data_Inq = (SELECT MAX(Data_Inq) FROM Inquerito)
  AND Inquerito.ID_Pac = Pacientes.ID_Pac
  AND Pacientes.ID_Pac = P1.ID
@@ -94,9 +94,9 @@ AND Pessoas.NIF = NIFs.NIF;
 
  INSERT INTO CPs(CP, Localidade)
  VALUES
- (2840-167, 'Seixal'),
- (4820-392, 'Fafe'),
- (5000-081, 'Vila Real');
+ ('2840-167', 'Seixal'),
+ ('4820-392', 'Fafe'),
+ ('5000-081', 'Vila Real');
 
  INSERT INTO Pessoas(ID, NIF, Morada, CP)
  VALUES
