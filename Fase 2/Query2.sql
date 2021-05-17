@@ -1,6 +1,6 @@
-USE Hospital;
+ USE Hospital;
  
- SELECT * FROM Agendar;
+/* SELECT * FROM Agendar;
  SELECT * FROM Alergias;
  SELECT * FROM Auxiliares;
  SELECT * FROM CPs;
@@ -17,11 +17,11 @@ USE Hospital;
  SELECT * FROM Pacientes;
  SELECT * FROM Pagar;
  SELECT * FROM Pessoas;
- SELECT * FROM Preco_Pag;
+ SELECT * FROM Preco_Pag;*/
 
  -- 2.1 Qual o último inquérito realizado? [Paciente (Nome), Data, Funcionário(Nome)]
 
- SELECT CONCAT(N1.Nome, ' ', N1.Apelido) as Paciente, Data_Inq, CONCAT(N2.Nome, ' ', N2.Apelido) as Funcionario
+ SELECT N1.Nome Paciente, CONVERT(smalldatetime, Data_Inq) 'Data', N2.Nome Funcionário
  FROM NIFs N1, NIFs N2, Pessoas P1, Pessoas P2, Pacientes, Funcionarios, Inquerito
  WHERE Data_Inq = (SELECT MAX(Data_Inq) FROM Inquerito)
  AND Inquerito.ID_Pac = Pacientes.ID_Pac
@@ -33,81 +33,84 @@ USE Hospital;
 
 -- 2.2. Quantos médicos existem de cada especialidade? [Especialidade, N_Médicos]
 
-SELECT Especialidade, COUNT(ID_Med) as NoMedicos
-FROM Medicos
-GROUP BY Especialidade;
+ SELECT Especialidade, COUNT(ID_Med) N_Médicos
+ FROM Medicos
+ GROUP BY Especialidade;
 
 -- 2.3. Quais os dois enfermeiros que mais operações assistiram? [Enfermeiro(Nome), N_Operações]
 
-SELECT NIFs.Nome as Enfermeiro, SQ1.N_Operacoes as N_Operacoes
-FROM (SELECT TOP 2 ID_Enf, COUNT(Operar.ID_Op) as N_Operacoes
-        FROM Operar
+ SELECT NIFs.Nome Enfermeiro, SQ1.N_Operações
+ FROM (SELECT TOP 2 ID_Enf, COUNT(Operar.ID_Op) N_Operações
+		FROM Operar
         GROUP BY ID_Enf
-        ORDER BY N_Operacoes DESC) SQ1,
+		ORDER BY N_Operações DESC) SQ1,
         Enfermeiros, Funcionarios, Pessoas, NIFs
-WHERE NIFs.NIF = Pessoas.NIF
-AND Pessoas.ID = Funcionarios.ID_Func
-AND Funcionarios.ID_Func = Enfermeiros.ID_Enf
-AND Enfermeiros.ID_Enf = SQ1.ID_Enf;
+ WHERE NIFs.NIF = Pessoas.NIF
+ AND Pessoas.ID = Funcionarios.ID_Func
+ AND Funcionarios.ID_Func = Enfermeiros.ID_Enf
+ AND Enfermeiros.ID_Enf = SQ1.ID_Enf;
 
 -- 2.4. Quais os pacientes que realizaram mais de 2 operações nos últimos 30 dias? Ordene-os alfabeticamente. [Pacientes (Nome), N_Operações]
 
-SELECT NIFs.Nome as Paciente, SQ1.N_Operacoes as N_Operacoes
-FROM (SELECT Local_Op.ID_Pac, COUNT(Operar.ID_Op) as N_Operacoes
-        FROM Operar, Local_Op
-        WHERE Operar.ID_Op = Local_Op.ID_Op
-		AND Operar.ID_Med = Local_Op.ID_Med
-		AND Operar.ID_Enf = Local_Op.ID_Enf
-		AND Operar.ID_Pac = Local_Op.ID_Pac
-        AND DATEDIFF(DAY, GETDATE(), Local_Op.Data_Op) <= 30
-        GROUP BY Local_Op.ID_Pac) SQ1, 
-        Pacientes, Pessoas, NIFs
-WHERE SQ1.N_Operacoes > 2
-AND SQ1.ID_Pac = Pacientes.ID_Pac
-AND Pacientes.ID_Pac = Pessoas.ID
-AND Pessoas.NIF = NIFs.NIF
-ORDER BY Paciente;
+ SELECT NIFs.Nome Paciente, SQ1.N_Operacoes N_Operacoes
+ FROM (SELECT Operar.ID_Pac, COUNT(Operar.ID_Op) N_Operacoes
+         FROM Operar, Info_Op
+         WHERE Operar.ID_Op = Info_Op.ID_Op
+         AND DATEDIFF(DAY, GETDATE(), Info_Op.Data_Op) <= 30
+         GROUP BY Operar.ID_Pac) SQ1, 
+		 Pacientes, Pessoas, NIFs
+ WHERE SQ1.N_Operacoes > 2
+ AND SQ1.ID_Pac = Pacientes.ID_Pac
+ AND Pacientes.ID_Pac = Pessoas.ID
+ AND Pessoas.NIF = NIFs.NIF
+ ORDER BY Paciente;
 
 -- 2.5. Quais os enfermeiros que também fazem de auxiliares? [Enfermeiros (nome)]
 
-SELECT NIFs.Nome as Enfermeiros
-FROM (SELECT ID_Enf as ID
-        FROM Enfermeiros
-        INNER JOIN Auxiliares
-        ON ID_Enf = ID_Aux) SQ1, Funcionarios, Pessoas, NIFs
-WHERE SQ1.ID = Funcionarios.ID_Func
-AND Funcionarios.ID_Func = Pessoas.ID
-AND Pessoas.NIF = NIFs.NIF;
+ SELECT ID_Enf, NIFs.Nome Enfermeiros
+ FROM NIFs,
+	  (SELECT ID ID_Enf, NIF
+	     FROM Enfermeiros E, Funcionarios F, Pessoas P
+ 		 WHERE E.ID_Enf = F.ID_Func
+ 		 AND F.ID_Func = P.ID) Enfs,
+	  (SELECT ID ID_Aux 
+	  	 FROM Auxiliares A, Funcionarios F, Pessoas P
+	     WHERE A.ID_Aux = F.ID_Func
+	     AND F.ID_Func = P.ID) Auxs
+ WHERE ID_Enf = ID_Aux
+ AND Enfs.NIF = NIFs.NIF;
 
 -- 2.6. Quais os pacientes que pagaram mais de 500€ em operações? [Pacientes(nome e apelido), Valor_Gasto]
 
-SELECT NIFs.Nome as Nome, NIFs.Apelido as Apelido, Valor_Gasto
-FROM (SELECT ID_Paciente as ID, SUM(Preco) as Valor_Gasto
-        FROM Pagar, Preco_Pag
-        WHERE Pagar.ID_Op = Preco_Pag.ID_Op
-        AND Pagar.ID_Med = Preco_Pag.ID_Med
-        AND Pagar.ID_Enf = Preco_Pag.ID_Enf
-        AND Pagar.ID_Pac = Preco_Pag.ID_Pac
-        GROUP BY ID_Paciente) SQ1,
-        Pacientes, Pessoas, NIFs
-WHERE SQ1.Valor_Gasto > 500
-AND SQ1.ID = Pacientes.ID_Pac
-AND Pacientes.ID_Pac = Pessoas.ID
-AND Pessoas.NIF = NIFs.NIF;
+ SELECT CONCAT(NIFs.Nome, ' ', NIFs.Apelido) Paciente, Valor_Gasto
+ FROM (SELECT ID_Paciente ID, SUM(Preco) Valor_Gasto
+         FROM Pagar, Preco_Pag
+         WHERE Pagar.ID_Op = Preco_Pag.ID_Op
+         AND Pagar.ID_Med = Preco_Pag.ID_Med
+         AND Pagar.ID_Enf = Preco_Pag.ID_Enf
+         AND Pagar.ID_Pac = Preco_Pag.ID_Pac
+         GROUP BY ID_Paciente) SQ1, 
+		 Pacientes, Pessoas, NIFs
+ WHERE SQ1.Valor_Gasto > 500
+ AND SQ1.ID = Pacientes.ID_Pac
+ AND Pacientes.ID_Pac = Pessoas.ID
+ AND Pessoas.NIF = NIFs.NIF;
 
 -- 2.7. Qual o total de inquéritos realizado por cada funcionário no ano de 2020?[Funcionários (Nome), Total_Inquéritos]
 
-SELECT NIFs.Nome as Funcionario, NoInqs
-FROM (SELECT ID_Func, COUNT(*) as NoInqs
-        FROM Inquerito, Descricoes
-        WHERE Inquerito.ID_Pac = Descricoes.ID_Pac
-        AND Inquerito.Data_Inq = Descricoes.Data_Inq
-        AND YEAR(Descricoes.Data_Inq) = 2020 
-        GROUP BY ID_Func) SQ1,
-        Funcionarios, Pessoas, NIFs
-WHERE SQ1.ID_Func = Funcionarios.ID_Func
-AND Funcionarios.ID_Func = Pessoas.ID
-AND Pessoas.NIF = NIFs.NIF;
+ SELECT ID, NIFs.Nome Funcionário, SQ2.Total_Inquéritos
+ FROM (SELECT F.ID_Func, COUNT(SQ1.ID_Func) Total_Inquéritos
+ 		 FROM Funcionarios F
+         LEFT JOIN (SELECT ID_Func
+					  FROM Inquerito, Descricoes
+					  WHERE Inquerito.ID_Pac = Descricoes.ID_Pac
+					  AND Inquerito.Data_Inq = Descricoes.Data_Inq
+					  AND YEAR(Descricoes.Data_Inq) = 2020) SQ1
+		 ON F.ID_Func = SQ1.ID_Func
+		 GROUP BY F.ID_Func) SQ2, 
+		 Pessoas, NIFs
+ WHERE SQ2.ID_Func = Pessoas.ID
+ AND Pessoas.NIF = NIFs.NIF;
 
  -- 1.
 
