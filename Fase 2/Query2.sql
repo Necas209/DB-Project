@@ -1,27 +1,29 @@
  USE Hospital;
  
-/* SELECT * FROM Agendar;
- SELECT * FROM Alergias;
- SELECT * FROM Auxiliares;
- SELECT * FROM CPs;
- SELECT * FROM Descricoes;
- SELECT * FROM Enfermeiros;
- SELECT * FROM Funcionarios;
- SELECT * FROM Info_Op;
- SELECT * FROM Inquerito;
- SELECT * FROM Local_Op;
- SELECT * FROM Medicos;
+/* 
  SELECT * FROM NIFs;
- SELECT * FROM Operar;
- SELECT * FROM Paciente_Alergia;
- SELECT * FROM Pacientes;
- SELECT * FROM Pagar;
+ SELECT * FROM CPs;
  SELECT * FROM Pessoas;
- SELECT * FROM Preco_Pag;*/
+ SELECT * FROM Pacientes;
+ SELECT * FROM Alergias;
+ SELECT * FROM Paciente_Alergia;
+ SELECT * FROM Funcionarios;
+ SELECT * FROM Medicos;
+ SELECT * FROM Enfermeiros;
+ SELECT * FROM Auxiliares;
+ SELECT * FROM Descricoes;
+ SELECT * FROM Inquerito;
+ SELECT * FROM Info_Op;
+ SELECT * FROM Operar;
+ SELECT * FROM Local_Op;
+ SELECT * FROM Agendar;
+ SELECT * FROM Preco_Pag;
+ SELECT * FROM Pagar;
+ */
 
  -- 2.1 Qual o último inquérito realizado? [Paciente (Nome), Data, Funcionário(Nome)]
 
- SELECT N1.Nome Paciente, CONVERT(smalldatetime, Data_Inq) 'Data', N2.Nome Funcionário
+ SELECT N1.Nome Paciente, Data_Inq 'Data', N2.Nome Funcionário
  FROM NIFs N1, NIFs N2, Pessoas P1, Pessoas P2, Pacientes, Funcionarios, Inquerito
  WHERE Data_Inq = (SELECT MAX(Data_Inq) FROM Inquerito)
  AND Inquerito.ID_Pac = Pacientes.ID_Pac
@@ -41,25 +43,29 @@
 
  SELECT NIFs.Nome Enfermeiro, SQ1.N_Operações
  FROM (SELECT TOP 2 ID_Enf, COUNT(Operar.ID_Op) N_Operações
-		FROM Operar
-        GROUP BY ID_Enf
-		ORDER BY N_Operações DESC) SQ1,
-        Enfermeiros, Funcionarios, Pessoas, NIFs
+	     FROM Operar
+         GROUP BY ID_Enf
+		 ORDER BY N_Operações DESC) SQ1,
+	  (SELECT ID_Enf, COUNT(Operar.ID_Op) N_Operações
+		 FROM Operar
+         GROUP BY ID_Enf) SQ2,
+         Enfermeiros, Funcionarios, Pessoas, NIFs
  WHERE NIFs.NIF = Pessoas.NIF
  AND Pessoas.ID = Funcionarios.ID_Func
  AND Funcionarios.ID_Func = Enfermeiros.ID_Enf
- AND Enfermeiros.ID_Enf = SQ1.ID_Enf;
+ AND Enfermeiros.ID_Enf = SQ2.ID_Enf
+ AND SQ2.N_Operações = SQ1.N_Operações;
 
 -- 2.4. Quais os pacientes que realizaram mais de 2 operações nos últimos 30 dias? Ordene-os alfabeticamente. [Pacientes (Nome), N_Operações]
 
- SELECT NIFs.Nome Paciente, SQ1.N_Operacoes N_Operacoes
- FROM (SELECT Operar.ID_Pac, COUNT(Operar.ID_Op) N_Operacoes
+ SELECT NIFs.NIF, NIFs.Nome Paciente, SQ1.N_Operações
+ FROM (SELECT Operar.ID_Pac, COUNT(Operar.ID_Op) N_Operações
          FROM Operar, Info_Op
          WHERE Operar.ID_Op = Info_Op.ID_Op
-         AND DATEDIFF(DAY, GETDATE(), Info_Op.Data_Op) <= 30
+         AND DATEDIFF(DAY, Info_Op.Data_Op, GETDATE()) <= 30
          GROUP BY Operar.ID_Pac) SQ1, 
 		 Pacientes, Pessoas, NIFs
- WHERE SQ1.N_Operacoes > 2
+ WHERE SQ1.N_Operações > 2
  AND SQ1.ID_Pac = Pacientes.ID_Pac
  AND Pacientes.ID_Pac = Pessoas.ID
  AND Pessoas.NIF = NIFs.NIF
@@ -114,7 +120,8 @@
 
  -- 1.
 
- INSERT INTO NIFs(NIF, Nome, Apelido, Telefone)	VALUES
+ INSERT INTO NIFs(NIF, Nome, Apelido, Telefone)	
+ VALUES
  (100000001, 'Joaquim', 'Macedo', 976711074),
  (100000002, 'Maria', 'Ventura', 947089902),
  (100000003, 'Joana', 'Marques', 986058286),
@@ -127,13 +134,15 @@
  (100000010, 'Filipa', 'Costa', 966841841),
  (100000011, 'João', 'Pedro', 937004002); 
 
- INSERT INTO CPs(CP, Localidade) VALUES
+ INSERT INTO CPs(CP, Localidade) 
+ VALUES
  ('2840-167', 'Seixal'),
  ('4820-392', 'Fafe'),
  ('5000-081', 'Vila Real'),
  ('4000-011', 'Porto');
 
- INSERT INTO Pessoas(ID, NIF, Morada, CP) VALUES
+ INSERT INTO Pessoas(ID, NIF, Morada, CP) 
+ VALUES
  (1001, 100000001, 'Rua Manuel 2', '5000-081'),
  (1002, 100000002, 'Rua Azevedo Pinto 23', '4820-392'),
  (1003, 100000003, 'Rua Capitao Marques 74 Andar 1', '2840-167'),
@@ -146,25 +155,29 @@
  (1010, 100000010, 'Travessa do Agro Bom', '4820-392'),
  (1011, 100000011, 'Rua Fernandes Tomás', '4000-011');
 
-  INSERT INTO Pacientes(ID_Pac) VALUES
+ INSERT INTO Pacientes(ID_Pac) 
+ VALUES
  (1001),
  (1002),
  (1003),
  (1004),
  (1005);
 
-  INSERT INTO Alergias(ID_Alerg, Tipo) VALUES
+ INSERT INTO Alergias(ID_Alerg, Tipo) 
+ VALUES
  (1, 'Alergia aos pólens'),
  (2, 'Alergia aos ácaros'),
  (3, 'Alergia alimentar'),
  (4, 'Alergia a medicamento');
 
-  INSERT INTO Paciente_Alergia(ID_Pac, ID_Alerg) VALUES
+ INSERT INTO Paciente_Alergia(ID_Pac, ID_Alerg) 
+ VALUES
  (1001, 3),
  (1002, 4),
  (1003, 2);
 
-  INSERT INTO Funcionarios(ID_Func, Salario) VALUES
+ INSERT INTO Funcionarios(ID_Func, Salario) 
+ VALUES
  (1004, 1000),
  (1005, 900),
  (1006, 650),
@@ -174,62 +187,72 @@
  (1010, 650),
  (1011, 700);
 
-  INSERT INTO Medicos(ID_Med, Especialidade) VALUES
+ INSERT INTO Medicos(ID_Med, Especialidade) 
+ VALUES
  (1004, 'Cardiologia'),
  (1009, 'Anestesiologia'),
  (1007, 'Anestesiologia'),
  (1005, 'Neurologia');
 
-  INSERT INTO Enfermeiros(ID_Enf, Turno, Horas_Extra) VALUES
+ INSERT INTO Enfermeiros(ID_Enf, Turno, Horas_Extra) 
+ VALUES
  (1006, 'Manhã', 0),
  (1008, 'Tarde', 10),
  (1010, 'Noite', 3);
 
- INSERT INTO Auxiliares(ID_Aux,	Antiguidade, Servico) VALUES
+ INSERT INTO Auxiliares(ID_Aux,	Antiguidade, Servico) 
+ VALUES
  (1006, 5, 'Ortopedia'),
  (1008, 10, 'Geral'),
  (1011, 25, 'Urgências');
 
-  INSERT INTO Descricoes(ID_Pac, Data_Inq, Descricao) VALUES
+ INSERT INTO Descricoes(ID_Pac, Data_Inq, Descricao) 
+ VALUES
  (1001, '2020-01-21', NULL),
  (1002, '2021-03-05', 'O paciente indicou alergia a paracetamol'),
  (1003, '2020-12-21', 'O paciente indicou alergia a ácaros');
 
-  INSERT INTO Inquerito(ID_Pac,	Data_Inq, ID_Func) VALUES
+ INSERT INTO Inquerito(ID_Pac,	Data_Inq, ID_Func) 
+ VALUES
  (1001, '2020-01-21', 1006),
  (1002, '2021-03-05', 1008),
  (1003, '2020-12-21', 1006);
 
-  INSERT INTO Info_Op(Data_Op, Duracao) VALUES
+ INSERT INTO Info_Op(Data_Op, Duracao) 
+ VALUES
  ('2021-04-23', 5),
  ('2021-04-15', 14),
- ('2021-05-29', NULL),
+ ('2021-05-18', NULL),
  ('2020-09-11', 9);
 
- INSERT INTO Operar(ID_Op, ID_Med, ID_Enf, ID_Pac) VALUES
+ INSERT INTO Operar(ID_Op, ID_Med, ID_Enf, ID_Pac)
+ VALUES
  (1, 1004, 1006, 1002),
  (2, 1005, 1006, 1004),
  (3, 1004, 1008, 1002),
  (4, 1005, 1010, 1002);
-
- INSERT INTO Local_Op(ID_Op, ID_Med, ID_Enf, ID_Pac, Data_Op, Local_Op) VALUES
+ 
+ INSERT INTO Local_Op(ID_Op, ID_Med, ID_Enf, ID_Pac, Data_Op, Local_Op) 
+ VALUES
  (1, 1004, 1006, 1002, '2021-04-23', 'Bloco B'),
  (2, 1005, 1006, 1004, '2021-04-15', 'Bloco A'),
- (3, 1004, 1008, 1002, '2021-05-29', 'Bloco D'),
+ (3, 1004, 1008, 1002, '2021-05-18', 'Bloco D'),
  (4, 1005, 1010, 1002, '2021-05-01', 'Bloco C');
-
-  INSERT INTO Agendar(ID_Op, ID_Med, ID_Enf, ID_Pac, Data_Op, ID_Aux, Data_Agend) VALUES
+ 
+ INSERT INTO Agendar(ID_Op, ID_Med, ID_Enf, ID_Pac, Data_Op, ID_Aux, Data_Agend) 
+ VALUES
  (1, 1004, 1006, 1002, '2021-04-23', 1006, '2020-12-21'),
  (2, 1005, 1006, 1004, '2021-04-15', 1008, '2020-01-21'),
- (3, 1004, 1008, 1002, '2021-05-29', 1011, '2021-03-05'),
+ (3, 1004, 1008, 1002, '2021-05-18', 1011, '2021-03-05'),
  (4, 1005, 1010, 1002, '2021-05-01', 1006, '2021-04-24');
 
-  INSERT INTO Preco_Pag(ID_Op, ID_Med, ID_Enf, ID_Pac, Preco) VALUES
+ INSERT INTO Preco_Pag(ID_Op, ID_Med, ID_Enf, ID_Pac, Preco) 
+ VALUES
  (1, 1004, 1006, 1002, 400),
  (2, 1005, 1006, 1004, 1000),
  (4, 1005, 1010, 1002, 800);
 
-  INSERT INTO Pagar(ID_Op, ID_Med, ID_Enf, ID_Pac, ID_Paciente, ID_Aux, Data_Pag)
+ INSERT INTO Pagar(ID_Op, ID_Med, ID_Enf, ID_Pac, ID_Paciente, ID_Aux, Data_Pag)
  VALUES
  (1, 1004, 1006, 1002, 1002, 1008, '2021-04-30'),
  (2, 1005, 1006, 1004, 1004, 1008, '2021-04-20'),
