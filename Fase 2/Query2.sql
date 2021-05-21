@@ -58,7 +58,7 @@
 
 -- 2.4. Quais os pacientes que realizaram mais de 2 operações nos últimos 30 dias? Ordene-os alfabeticamente. [Pacientes (Nome), N_Operações]
 
- SELECT NIFs.NIF, NIFs.Nome Paciente, SQ1.N_Operações
+ SELECT NIFs.Nome Paciente, SQ1.N_Operações
  FROM (SELECT Operar.ID_Pac, COUNT(Operar.ID_Op) N_Operações
          FROM Operar, Info_Op
          WHERE Operar.ID_Op = Info_Op.ID_Op
@@ -73,7 +73,7 @@
 
 -- 2.5. Quais os enfermeiros que também fazem de auxiliares? [Enfermeiros (nome)]
 
- SELECT ID_Enf, NIFs.Nome Enfermeiros
+ SELECT ID_Enf ID, NIFs.Nome Enfermeiro
  FROM NIFs,
 	  (SELECT ID ID_Enf, NIF
 	     FROM Enfermeiros E, Funcionarios F, Pessoas P
@@ -104,7 +104,7 @@
 
 -- 2.7. Qual o total de inquéritos realizado por cada funcionário no ano de 2020?[Funcionários (Nome), Total_Inquéritos]
 
- SELECT ID, NIFs.Nome Funcionário, SQ2.Total_Inquéritos
+ SELECT NIFs.Nome Funcionário, SQ2.Total_Inquéritos
  FROM (SELECT F.ID_Func, COUNT(SQ1.ID_Func) Total_Inquéritos
  		 FROM Funcionarios F
          LEFT JOIN (SELECT ID_Func
@@ -125,8 +125,8 @@
  (100000001, 'Joaquim', 'Macedo', 976711074),
  (100000002, 'Maria', 'Ventura', 947089902),
  (100000003, 'Joana', 'Marques', 986058286),
- (100000004, 'Diogo', 'Medeiros', 281876574),
- (100000005, 'Rui', 'Pinto', 234686761),
+ (100000004, 'Diogo', 'Antunes', 281876574),
+ (100000005, 'Rui', 'Alexandre', 234686761),
  (100000006, 'Ricardo', 'Araujo', 260267139),
  (100000007, 'Judite', 'Pereira', 937466897),
  (100000008, 'Elizabete', 'Rodrigues', 917342571),
@@ -208,22 +208,23 @@
 
  INSERT INTO Descricoes(ID_Pac, Data_Inq, Descricao) 
  VALUES
- (1001, '2020-01-21', NULL),
- (1002, '2021-03-05', 'O paciente indicou alergia a paracetamol'),
- (1003, '2020-12-21', 'O paciente indicou alergia a ácaros');
+ (1001, '2020-01-21 09:00', NULL),
+ (1002, '2020-07-05 11:00', 'O paciente indicou alergia a paracetamol'),
+ (1003, '2020-12-21 15:00', 'O paciente indicou alergia a ácaros');
 
  INSERT INTO Inquerito(ID_Pac,	Data_Inq, ID_Func) 
  VALUES
- (1001, '2020-01-21', 1006),
- (1002, '2021-03-05', 1008),
- (1003, '2020-12-21', 1006);
+ (1001, '2020-01-21 09:00', 1006),
+ (1002, '2020-07-05 11:00', 1008),
+ (1003, '2020-12-21 15:00', 1006);
+
 
  INSERT INTO Info_Op(Data_Op, Duracao) 
  VALUES
- ('2021-04-23', 5),
- ('2021-04-15', 14),
- ('2021-05-18', NULL),
- ('2020-09-11', 9);
+ ('2021-04-23 08:30', 5),
+ ('2021-04-15 10:30', 14),
+ ('2021-05-18 14:30', NULL),
+ ('2020-09-11 16:00', 9);
 
  INSERT INTO Operar(ID_Op, ID_Med, ID_Enf, ID_Pac)
  VALUES
@@ -234,17 +235,17 @@
  
  INSERT INTO Local_Op(ID_Op, ID_Med, ID_Enf, ID_Pac, Data_Op, Local_Op) 
  VALUES
- (1, 1004, 1006, 1002, '2021-04-23', 'Bloco B'),
- (2, 1005, 1006, 1004, '2021-04-15', 'Bloco A'),
- (3, 1004, 1008, 1002, '2021-05-18', 'Bloco D'),
- (4, 1005, 1010, 1002, '2021-05-01', 'Bloco C');
+ (1, 1004, 1006, 1002, '2021-04-23 08:30', 'Bloco B'),
+ (2, 1005, 1006, 1004, '2021-04-15 10:30', 'Bloco A'),
+ (3, 1004, 1008, 1002, '2021-05-18 14:30', 'Bloco D'),
+ (4, 1005, 1010, 1002, '2021-05-01 16:00', 'Bloco C');
  
  INSERT INTO Agendar(ID_Op, ID_Med, ID_Enf, ID_Pac, Data_Op, ID_Aux, Data_Agend) 
  VALUES
- (1, 1004, 1006, 1002, '2021-04-23', 1006, '2020-12-21'),
- (2, 1005, 1006, 1004, '2021-04-15', 1008, '2020-01-21'),
- (3, 1004, 1008, 1002, '2021-05-18', 1011, '2021-03-05'),
- (4, 1005, 1010, 1002, '2021-05-01', 1006, '2021-04-24');
+ (1, 1004, 1006, 1002, '2021-04-23 08:30', 1006, '2020-12-21 14:00'),
+ (2, 1005, 1006, 1004, '2021-04-15 10:30', 1008, '2020-01-21 12:00'),
+ (3, 1004, 1008, 1002, '2021-05-18 14:30', 1011, '2021-03-05 09:00'),
+ (4, 1005, 1010, 1002, '2021-05-01 16:00', 1006, '2021-04-24 09:30');
 
  INSERT INTO Preco_Pag(ID_Op, ID_Med, ID_Enf, ID_Pac, Preco) 
  VALUES
@@ -254,6 +255,6 @@
 
  INSERT INTO Pagar(ID_Op, ID_Med, ID_Enf, ID_Pac, ID_Paciente, ID_Aux, Data_Pag)
  VALUES
- (1, 1004, 1006, 1002, 1002, 1008, '2021-04-30'),
- (2, 1005, 1006, 1004, 1004, 1008, '2021-04-20'),
- (4, 1005, 1010, 1002, 1002, 1011, '2021-05-01');
+ (1, 1004, 1006, 1002, 1002, 1008, '2021-04-30 14:00'),
+ (2, 1005, 1006, 1004, 1004, 1008, '2021-04-20 09:00'),
+ (4, 1005, 1010, 1002, 1002, 1011, DEFAULT);
