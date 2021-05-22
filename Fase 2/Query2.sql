@@ -73,7 +73,7 @@
 
 -- 2.5. Quais os enfermeiros que também fazem de auxiliares? [Enfermeiros (nome)]
 
- SELECT ID_Enf ID, Nome Enfermeiro
+ SELECT Nome Enfermeiro
  FROM NIFs,
 	  (SELECT ID ID_Enf, NIF NIF_Enf
 	     FROM Enfermeiros, Funcionarios, Pessoas
