@@ -103,7 +103,7 @@ CREATE TABLE Inquerito(
 );	
 
 CREATE TABLE Info_Op(
-	ID_Op   INTEGER	 IDENTITY(1,1),
+	ID_Op   INTEGER,
 	Data_Op DATETIME NOT NULL,
 	Duracao INTEGER  DEFAULT NULL, -- Duracao opcional
 	PRIMARY KEY (ID_Op)
