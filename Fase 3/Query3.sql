@@ -76,8 +76,12 @@ BEGIN
 		(SELECT O.ID_Enf, SUM(P.Preco * 0.05) Extra
 		FROM Info_Op I, Operar O, Preco_Pag P
 		WHERE I.ID_Op = O.ID_Op
-		AND O.ID_Op = P.ID_Op AND O.ID_Med = P.ID_Med AND O.ID_Enf = P.ID_Enf AND O.ID_Pac = P.ID_Pac
-		AND MONTH(Data_Op) = @Mes AND YEAR(Data_Op) = @Ano
+		AND O.ID_Op = P.ID_Op 
+		AND O.ID_Med = P.ID_Med 
+		AND O.ID_Enf = P.ID_Enf 
+		AND O.ID_Pac = P.ID_Pac
+		AND MONTH(Data_Op) = @Mes 
+		AND YEAR(Data_Op) = @Ano
 		GROUP BY O.ID_Enf) SQ1
 	ON E.ID_Enf = SQ1.ID_Enf) SQ2
 	WHERE SQ2.ID_Enf = ID_Func
@@ -87,34 +91,20 @@ END
 
 -- 3. Crie um trigger que apenas deixe inserir registos no relacionamento inquérito se o paciente tiver alergias.
 
--- corrigir depois kkkk
 CREATE TRIGGER InserirInq
 ON Descricoes -- A tabela Inqueritos referencia a tabela Descricoes
 INSTEAD OF INSERT
 AS
 BEGIN
-	DECLARE @ID_Pac INTEGER,
-			@Data_Inq DATETIME,
-			@Descricao VARCHAR(100),
-			@N INTEGER
+	DECLARE	@N INTEGER
 
-    SELECT @ID_Pac = ID_Pac,
-		   @Data_Inq = Data_Inq,
-		   @Descricao = Descricao
-	FROM inserted
-	
-	SELECT @N = COUNT(*)
-	FROM Paciente_Alergia
-	WHERE ID_Pac = @ID_Pac
-
-	IF (@N > 0)
-		BEGIN
-			INSERT INTO Descricoes (ID_Pac, Data_Inq, Descricao)
-			VALUES (@ID_Pac, @Data_Inq, @Descricao)
-		END
-	ELSE
-		BEGIN
-			PRINT ('O paciente não tem alergias!')
-		END
+	INSERT INTO Descricoes (ID_Pac, Data_Inq, Descricao)
+	SELECT ID_Pac, Data_Inq, Descricao
+	FROM inserted, 
+		(SELECT PA.ID_Pac ID, COUNT(ID_Alerg) N 
+			FROM Paciente_Alergia PA, inserted I
+			WHERE PA.ID_Pac = I.ID_Pac
+			GROUP BY PA.ID_Pac) SQ1
+	WHERE ID_Pac = ID
+	AND SQ1.N > 0
 END
-    --CORPO DO TRIGGER
