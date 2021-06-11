@@ -39,7 +39,7 @@ BEGIN
 	FROM Local_Op
 	WHERE ID_Med = @ID_Med
 	AND CONVERT(date, Data_Op) = CONVERT(date, @Data)
-	AND DATEPART(HOUR, Data_Op) != DATEPART(HOUR, @Data)
+	AND ABS(DATEDIFF(HOUR, Data_Op, @Data)) < 12
 
 	IF (@@ROWCOUNT != 0)
 	BEGIN
