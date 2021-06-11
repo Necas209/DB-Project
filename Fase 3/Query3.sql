@@ -1,25 +1,16 @@
+USE Hospital;
+
 /* 1. Crie um procedimento que, dados o telefone de um paciente, o nome e o apelido de um médico e uma data, verifique se o médico está a operar 
 nessa data e caso não esteja agende uma operação para o paciente. O procedimento deve ter como argumento de saída a especialidade do médico.*/
 
-CREATE PROCEDURE VerifyDisp (@Telefone INTEGER, @Nome VARCHAR, @Apelido VARCHAR, @Data DATETIME)
+CREATE PROCEDURE VerifyDisp (@Telefone INTEGER, @Nome VARCHAR(50), @Apelido VARCHAR(50), @Data DATE, @Esp VARCHAR(50) OUTPUT)
 AS
 BEGIN
 	DECLARE @ID_Pac INTEGER,
-			@Esp VARCHAR(50),
 			@ID_Med INTEGER,
-			@ID_Op INTEGER
-
-	SELECT @ID_Pac = ID_Pac
-	FROM NIFs N, Pessoas P, Pacientes
-	WHERE Telefone = @Telefone
-	AND N.NIF = P.NIF
-	AND ID = ID_Pac
-
-	IF (@ID_Pac IS NULL)
-	BEGIN
-		PRINT ('Não existe um paciente com o numero de telefone dado')
-		RETURN NULL
-	END
+			@ID_Op INTEGER,
+			@ID_Enf INTEGER,
+			@ID_Aux INTEGER
 
 	SELECT @ID_Med = ID_Med, @Esp = Especialidade
 	FROM NIFs N, Pessoas P, Funcionarios, Medicos
@@ -32,19 +23,43 @@ BEGIN
 	IF (@ID_Med IS NULL)
 	BEGIN
 		PRINT ('O médico não existe')
-		RETURN NULL
+		RETURN -1
 	END
 
-	SELECT ID_Med, Data_Op
-	FROM Local_Op
+	SELECT @ID_Pac = ID_Pac
+	FROM NIFs N, Pessoas P, Pacientes
+	WHERE Telefone = @Telefone
+	AND N.NIF = P.NIF
+	AND ID = ID_Pac
+
+	IF (@ID_Pac IS NULL)
+	BEGIN
+		PRINT ('Não existe um paciente com o número de telefone dado')
+		RETURN -1
+	END
+
+	SELECT * 
+	FROM Agendar
 	WHERE ID_Med = @ID_Med
-	AND CONVERT(date, Data_Op) = CONVERT(date, @Data)
-	AND ABS(DATEDIFF(HOUR, Data_Op, @Data)) < 12
+	AND CONVERT(date, Data_Op) = @Data
 
 	IF (@@ROWCOUNT != 0)
 	BEGIN
-		PRINT ('O médico já está operar nessa data')
-		RETURN NULL
+		PRINT ('O médico já tem operações agendadas para essa data')
+		RETURN -1
+	END
+
+	SELECT @ID_Enf = E.ID_Enf
+	FROM Enfermeiros E
+	LEFT JOIN Agendar A
+	ON E.ID_Enf = A.ID_Enf
+	WHERE A.ID_Enf IS NULL
+	OR CONVERT(date, Data_Op) != @Data
+
+	IF (@ID_Enf IS NULL)
+	BEGIN
+		PRINT ('Não há enfermeiros disponíveis')
+		RETURN -1
 	END
 
 	INSERT INTO Info_Op (Data_Op)
@@ -52,15 +67,18 @@ BEGIN
 	SELECT @ID_Op = @@IDENTITY
 
 	INSERT INTO Operar (ID_Op, ID_Med, ID_Enf, ID_Pac)
-	VALUES (@ID_Op, @ID_Med, 1008, @ID_Pac)
+	VALUES (@ID_Op, @ID_Med, @ID_Enf, @ID_Pac)
 
 	INSERT INTO Local_Op (ID_Op, ID_Med, ID_Enf, ID_Pac, Data_Op, Local_Op)
-	VALUES (@ID_Op, @ID_Med, 1008, @ID_Pac, @Data, '')
+	VALUES (@ID_Op, @ID_Med, @ID_Enf, @ID_Pac, @Data, '')
+
+	SELECT @ID_Aux = ID_Aux
+	FROM Auxiliares
 
 	INSERT INTO Agendar (ID_Op, ID_Med, ID_Enf, ID_Pac, ID_Aux, Data_Op)
-	VALUES (@ID_Op, @ID_Med, 1008, @ID_Pac, 1008, @Data)
+	VALUES (@ID_Op, @ID_Med, @ID_Enf, @ID_Pac, @ID_Aux, @Data)
 
-	RETURN @Esp
+	RETURN 1
 END
 
 /* 2. Assumindo que o salário dos enfermeiros é complementado com um valor calculado em função das operações em que participam, das quais recebem 
@@ -73,18 +91,18 @@ BEGIN
 	SELECT ID_Func, Nome, Apelido, (Salario + ISNULL(Extra, 0)) Total
 	FROM Funcionarios, Pessoas P, NIFs N,
 	(SELECT E.ID_Enf, Extra
-	FROM Enfermeiros E
-		LEFT JOIN
+	 FROM Enfermeiros E
+	 LEFT JOIN
 		(SELECT O.ID_Enf, SUM(P.Preco * 0.05) Extra
-			FROM Info_Op I, Operar O, Preco_Pag P
-			WHERE I.ID_Op = O.ID_Op
-			AND O.ID_Op = P.ID_Op 
-			AND O.ID_Med = P.ID_Med 
-			AND O.ID_Enf = P.ID_Enf 
-			AND O.ID_Pac = P.ID_Pac
-			AND MONTH(Data_Op) = @Mes 
-			AND YEAR(Data_Op) = @Ano
-			GROUP BY O.ID_Enf) SQ1
+		 FROM Info_Op I, Operar O, Preco_Pag P
+		 WHERE I.ID_Op = O.ID_Op
+		 AND O.ID_Op = P.ID_Op 
+		 AND O.ID_Med = P.ID_Med 
+		 AND O.ID_Enf = P.ID_Enf 
+		 AND O.ID_Pac = P.ID_Pac
+		 AND MONTH(Data_Op) = @Mes 
+		 AND YEAR(Data_Op) = @Ano
+		 GROUP BY O.ID_Enf) SQ1
 	ON E.ID_Enf = SQ1.ID_Enf) SQ2
 	WHERE SQ2.ID_Enf = ID_Func
 	AND ID_Func = ID

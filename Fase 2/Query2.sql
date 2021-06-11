@@ -219,12 +219,12 @@
  (1003, '2020-12-21 15:00', 1006);
 
 
- INSERT INTO Info_Op(ID_Op, Data_Op, Duracao) 
+ INSERT INTO Info_Op(Data_Op, Duracao) 
  VALUES
- (1, '2021-04-23 08:30', 5),
- (2, '2021-04-15 10:30', 14),
- (3, '2021-05-18 14:30', NULL),
- (4, '2020-09-11 16:00', 9);
+ ('2021-04-23 08:30', 5),
+ ('2021-04-15 10:30', 14),
+ ('2021-05-18 14:30', NULL),
+ ('2020-09-11 16:00', 9);
 
  INSERT INTO Operar(ID_Op, ID_Med, ID_Enf, ID_Pac)
  VALUES
