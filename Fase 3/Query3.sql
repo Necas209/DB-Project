@@ -4,8 +4,22 @@ nessa data e caso não esteja agende uma operação para o paciente. O procedimento
 CREATE PROCEDURE VerifyDisp (@Telefone INTEGER, @Nome VARCHAR, @Apelido VARCHAR, @Data DATETIME)
 AS
 BEGIN
-	DECLARE @Esp VARCHAR(50),
-			@ID_Med INTEGER
+	DECLARE @ID_Pac INTEGER,
+			@Esp VARCHAR(50),
+			@ID_Med INTEGER,
+			@ID_Op INTEGER
+
+	SELECT @ID_Pac = ID_Pac
+	FROM NIFs N, Pessoas P, Pacientes
+	WHERE Telefone = @Telefone
+	AND N.NIF = P.NIF
+	AND ID = ID_Pac
+
+	IF (@ID_Pac IS NULL)
+	BEGIN
+		PRINT ('Não existe um paciente com o numero de telefone dado')
+		RETURN NULL
+	END
 
 	SELECT @ID_Med = ID_Med, @Esp = Especialidade
 	FROM NIFs N, Pessoas P, Funcionarios, Medicos
@@ -24,7 +38,8 @@ BEGIN
 	SELECT ID_Med, Data_Op
 	FROM Local_Op
 	WHERE ID_Med = @ID_Med
-	AND Data_Op = @Data
+	AND CONVERT(date, Data_Op) = CONVERT(date, @Data)
+	AND DATEPART(HOUR, Data_Op) != DATEPART(HOUR, @Data)
 
 	IF (@@ROWCOUNT != 0)
 	BEGIN
@@ -32,30 +47,18 @@ BEGIN
 		RETURN NULL
 	END
 
-	DECLARE @ID_Pac INTEGER
-	SELECT @ID_Pac = ID_Pac
-	FROM NIFs N, Pessoas P, Pacientes
-	WHERE Telefone = @Telefone
-	AND N.NIF = P.NIF
-	AND ID = ID_Pac
-
-	IF (@ID_Pac IS NULL)
-	BEGIN
-		PRINT ('Não existe um paciente com o numero de telefone dado')
-		RETURN NULL
-	END
-
-	INSERT INTO Info_Op (ID_Op, Data_Op)
-	VALUES (12345, @Data)
+	INSERT INTO Info_Op (Data_Op)
+	VALUES (@Data)
+	SELECT @ID_Op = @@IDENTITY
 
 	INSERT INTO Operar (ID_Op, ID_Med, ID_Enf, ID_Pac)
-	VALUES (12345, @ID_Med, 1008, @ID_Pac)
+	VALUES (@ID_Op, @ID_Med, 1008, @ID_Pac)
 
 	INSERT INTO Local_Op (ID_Op, ID_Med, ID_Enf, ID_Pac, Data_Op, Local_Op)
-	VALUES (12345, @ID_Med, 1008, @ID_Pac, @Data, 'Bloco B')
+	VALUES (@ID_Op, @ID_Med, 1008, @ID_Pac, @Data, '')
 
 	INSERT INTO Agendar (ID_Op, ID_Med, ID_Enf, ID_Pac, ID_Aux, Data_Op)
-	VALUES (12345, @ID_Med, 1008, @ID_Pac, 1008, @Data)
+	VALUES (@ID_Op, @ID_Med, 1008, @ID_Pac, 1008, @Data)
 
 	RETURN @Esp
 END
@@ -63,7 +66,6 @@ END
 /* 2. Assumindo que o salário dos enfermeiros é complementado com um valor calculado em função das operações em que participam, das quais recebem 
 5% do valor da operação, crie um procedimento que, para um dado mês e ano, apresente uma tabela com os ID, nome e apelidos dos enfermeiros e o total 
 que cada um recebe nesse mês.*/
-
 
 CREATE PROCEDURE SalarioEnfs (@Mes INTEGER, @Ano INTEGER)
 AS
@@ -74,15 +76,15 @@ BEGIN
 	FROM Enfermeiros E
 		LEFT JOIN
 		(SELECT O.ID_Enf, SUM(P.Preco * 0.05) Extra
-		FROM Info_Op I, Operar O, Preco_Pag P
-		WHERE I.ID_Op = O.ID_Op
-		AND O.ID_Op = P.ID_Op 
-		AND O.ID_Med = P.ID_Med 
-		AND O.ID_Enf = P.ID_Enf 
-		AND O.ID_Pac = P.ID_Pac
-		AND MONTH(Data_Op) = @Mes 
-		AND YEAR(Data_Op) = @Ano
-		GROUP BY O.ID_Enf) SQ1
+			FROM Info_Op I, Operar O, Preco_Pag P
+			WHERE I.ID_Op = O.ID_Op
+			AND O.ID_Op = P.ID_Op 
+			AND O.ID_Med = P.ID_Med 
+			AND O.ID_Enf = P.ID_Enf 
+			AND O.ID_Pac = P.ID_Pac
+			AND MONTH(Data_Op) = @Mes 
+			AND YEAR(Data_Op) = @Ano
+			GROUP BY O.ID_Enf) SQ1
 	ON E.ID_Enf = SQ1.ID_Enf) SQ2
 	WHERE SQ2.ID_Enf = ID_Func
 	AND ID_Func = ID
@@ -96,15 +98,13 @@ ON Descricoes -- A tabela Inqueritos referencia a tabela Descricoes
 INSTEAD OF INSERT
 AS
 BEGIN
-	DECLARE	@N INTEGER
-
 	INSERT INTO Descricoes (ID_Pac, Data_Inq, Descricao)
 	SELECT ID_Pac, Data_Inq, Descricao
 	FROM inserted, 
-		(SELECT PA.ID_Pac ID, COUNT(ID_Alerg) N 
-			FROM Paciente_Alergia PA, inserted I
-			WHERE PA.ID_Pac = I.ID_Pac
+		(SELECT PA.ID_Pac ID
+			FROM Paciente_Alergia PA, Pacientes P, inserted I
+			WHERE I.ID_Pac = P.ID_Pac
+			AND P.ID_Pac = PA.ID_Pac
 			GROUP BY PA.ID_Pac) SQ1
 	WHERE ID_Pac = ID
-	AND SQ1.N > 0
 END
