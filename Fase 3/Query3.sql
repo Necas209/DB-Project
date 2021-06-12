@@ -51,10 +51,12 @@ BEGIN
 
 	SELECT @ID_Enf = E.ID_Enf
 	FROM Enfermeiros E
-	LEFT JOIN Agendar A
-	ON E.ID_Enf = A.ID_Enf
-	WHERE A.ID_Enf IS NULL
-	OR CONVERT(date, Data_Op) != @Data
+	LEFT JOIN (SELECT ID_Enf
+				FROM Agendar
+				WHERE CONVERT(date, Data_Op) = @Data
+				GROUP BY ID_Enf) SQ1
+	ON E.ID_Enf = SQ1.ID_Enf
+	WHERE SQ1.ID_Enf IS NULL
 
 	IF (@ID_Enf IS NULL)
 	BEGIN
@@ -62,18 +64,18 @@ BEGIN
 		RETURN -1
 	END
 
+	SELECT @ID_Aux = ID_Aux
+	FROM Auxiliares
+
 	INSERT INTO Info_Op (Data_Op)
 	VALUES (@Data)
-	SELECT @ID_Op = @@IDENTITY
+	SET @ID_Op = @@IDENTITY
 
 	INSERT INTO Operar (ID_Op, ID_Med, ID_Enf, ID_Pac)
 	VALUES (@ID_Op, @ID_Med, @ID_Enf, @ID_Pac)
 
 	INSERT INTO Local_Op (ID_Op, ID_Med, ID_Enf, ID_Pac, Data_Op, Local_Op)
 	VALUES (@ID_Op, @ID_Med, @ID_Enf, @ID_Pac, @Data, '')
-
-	SELECT @ID_Aux = ID_Aux
-	FROM Auxiliares
 
 	INSERT INTO Agendar (ID_Op, ID_Med, ID_Enf, ID_Pac, ID_Aux, Data_Op)
 	VALUES (@ID_Op, @ID_Med, @ID_Enf, @ID_Pac, @ID_Aux, @Data)
@@ -88,22 +90,21 @@ que cada um recebe nesse mês.*/
 CREATE PROCEDURE SalarioEnfs (@Mes INTEGER, @Ano INTEGER)
 AS
 BEGIN
-	SELECT ID_Func, Nome, Apelido, (Salario + ISNULL(Extra, 0)) Total
+	SELECT ID_Func AS ID_Enf, Nome, Apelido, (Salario + ISNULL(Extra, 0)) AS Total
 	FROM Funcionarios, Pessoas P, NIFs N,
-	(SELECT E.ID_Enf, Extra
-	 FROM Enfermeiros E
-	 LEFT JOIN
-		(SELECT O.ID_Enf, SUM(P.Preco * 0.05) Extra
-		 FROM Info_Op I, Operar O, Preco_Pag P
-		 WHERE I.ID_Op = O.ID_Op
-		 AND O.ID_Op = P.ID_Op 
-		 AND O.ID_Med = P.ID_Med 
-		 AND O.ID_Enf = P.ID_Enf 
-		 AND O.ID_Pac = P.ID_Pac
-		 AND MONTH(Data_Op) = @Mes 
-		 AND YEAR(Data_Op) = @Ano
-		 GROUP BY O.ID_Enf) SQ1
-	ON E.ID_Enf = SQ1.ID_Enf) SQ2
+		 (SELECT E.ID_Enf, Extra
+		  FROM Enfermeiros E
+		  LEFT JOIN (SELECT O.ID_Enf, SUM(Preco * 0.05) Extra
+		  			 FROM Info_Op I, Operar O, Preco_Pag P
+		  			 WHERE I.ID_Op = O.ID_Op
+		  			 AND O.ID_Op = P.ID_Op 
+		  			 AND O.ID_Med = P.ID_Med 
+		  			 AND O.ID_Enf = P.ID_Enf 
+		  			 AND O.ID_Pac = P.ID_Pac
+		     		 AND MONTH(Data_Op) = @Mes 
+		  			 AND YEAR(Data_Op) = @Ano
+		  			 GROUP BY O.ID_Enf) SQ1
+		  ON E.ID_Enf = SQ1.ID_Enf) SQ2
 	WHERE SQ2.ID_Enf = ID_Func
 	AND ID_Func = ID
 	AND P.NIF = N.NIF
@@ -120,9 +121,9 @@ BEGIN
 	SELECT ID_Pac, Data_Inq, Descricao
 	FROM inserted, 
 		(SELECT PA.ID_Pac ID
-			FROM Paciente_Alergia PA, Pacientes P, inserted I
-			WHERE I.ID_Pac = P.ID_Pac
-			AND P.ID_Pac = PA.ID_Pac
-			GROUP BY PA.ID_Pac) SQ1
+		 FROM Paciente_Alergia PA, Pacientes P, inserted I
+		 WHERE I.ID_Pac = P.ID_Pac
+		 AND P.ID_Pac = PA.ID_Pac
+		 GROUP BY PA.ID_Pac) SQ1
 	WHERE ID_Pac = ID
 END
