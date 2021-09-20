@@ -2,7 +2,11 @@ USE Hospital;
 
 /* 1. Crie um procedimento que, dados o telefone de um paciente, o nome e o apelido de um médico e uma data, verifique se o médico está a operar 
 nessa data e caso não esteja agende uma operação para o paciente. O procedimento deve ter como argumento de saída a especialidade do médico.*/
-
+declare @esp varchar(50)
+exec VerifyDisp 986058286, 'Rui', 'Alexandre', '2021-06-21', @esp output
+print @esp
+select * from NIFs
+select * from Agendar
 CREATE PROCEDURE VerifyDisp (@Telefone INTEGER, @Nome VARCHAR(50), @Apelido VARCHAR(50), @Data DATE, @Esp VARCHAR(50) OUTPUT)
 AS
 BEGIN
@@ -109,7 +113,7 @@ BEGIN
 	AND ID_Func = ID
 	AND P.NIF = N.NIF
 END
-
+exec SalarioEnfs 4, 2021
 -- 3. Crie um trigger que apenas deixe inserir registos no relacionamento inquérito se o paciente tiver alergias.
 
 CREATE TRIGGER InserirInq
@@ -120,10 +124,10 @@ BEGIN
 	INSERT INTO Descricoes (ID_Pac, Data_Inq, Descricao)
 	SELECT ID_Pac, Data_Inq, Descricao
 	FROM inserted, 
-		(SELECT PA.ID_Pac ID
+		(SELECT DISTINCT PA.ID_Pac ID
 		 FROM Paciente_Alergia PA, Pacientes P, inserted I
 		 WHERE I.ID_Pac = P.ID_Pac
 		 AND P.ID_Pac = PA.ID_Pac
-		 GROUP BY PA.ID_Pac) SQ1
+		 /*GROUP BY PA.ID_Pac*/) SQ1
 	WHERE ID_Pac = ID
 END
